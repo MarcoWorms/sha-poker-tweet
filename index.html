@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SHA-256 Hash Gamification</title>
+  <style>
+    span {
+      border: dashed 1px black;
+    }
+    .repeated-2 {
+      background-color: rgb(233, 233, 233);
+    }
+    .repeated-3 {
+      background-color: rgb(214, 214, 214);
+    }
+    .repeated-4 {
+      background-color: rgb(183, 183, 183);
+    }
+    .repeated-5 {
+      background-color: rgb(153, 153, 153);
+    }
+    .repeated-6 {
+      background-color: rgb(129, 129, 129);
+    }
+    .repeated-7 {
+      background-color: rgb(109, 109, 109);
+    }
+    .repeated-8 {
+      background-color: rgb(90, 90, 90);
+    }
+    .repeated-9 {
+      background-color: rgb(64, 64, 64);
+    }
+    .repeated-10 {
+      background-color: rgb(42, 42, 42);
+    }
+    
+    .sequence-3 {
+      background-color: rgb(253, 255, 164);
+    }
+    .sequence-4 {
+      background-color: rgb(163, 255, 25);
+    }
+    .sequence-5 {
+      background-color: rgb(57, 136, 255);
+    }
+    .sequence-6 {
+      background-color: rgb(251, 0, 255);
+    }
+    .sequence-7 {
+      background-color: rgb(255, 149, 0);
+    }
+    .sequence-8 {
+      background-color: rgb(255, 149, 0);
+    }
+    .sequence-9 {
+      background-color: rgb(255, 149, 0);
+    }
+    .sequence-10 {
+      background-color: rgb(255, 149, 0);
+    }
+  </style>
+</head>
+<body>
+  <h1>SHA Poker Tweet</h1>
+  <p>Write a sentence up to 144 characters, this will convert it to SHA-256 and judge it using arbitrary gamification.</p>
+  <p>Base score sums all characters in the hash. Repeated characters and sequences increase multiplier.</p>
+
+  <textarea onkeyup="generateHash()" id="inputText" rows="5" cols="50" maxlength="144"></textarea>
+  <br>
+  <br><br>
+  <h2>Result Hash:</h2>
+  <div id="hashOutput">---</div>
+  <br>
+  <h2>Hash Score:</h2>
+  <div id="score">---</div>
+  <h2>Mint</h2>
+  <button>Mint in BASE for 0.00001 ETH</button>
+  <script>
+    async function generateHash() {
+      const inputText = document.getElementById('inputText').value;
+      const hash = await sha256(inputText);
+      const hashOutput = document.getElementById('hashOutput');
+      const score = document.getElementById('score');
+      let highlightedHash = '';
+      let totalScore = 0;
+      let multiplier = 1;
+
+      const sequences = [
+        { length: 10, regex: /^(?:0123456789)$/, class: 'sequence-10', multiplier: 50 },
+        { length: 9, regex: /^(?:012345678|123456789)$/, class: 'sequence-9', multiplier: 30 },
+        { length: 8, regex: /^(?:01234567|12345678|23456789)$/, class: 'sequence-8', multiplier: 20 },
+        { length: 7, regex: /^(?:0123456|1234567|2345678|3456789)$/, class: 'sequence-7', multiplier: 15 },
+        { length: 6, regex: /^(?:012345|123456|234567|345678|456789|abcdef)$/, class: 'sequence-6', multiplier: 11 },
+        { length: 5, regex: /^(?:01234|12345|23456|34567|45678|56789|abcde|bcdef|43210|54321|65432|76543|87654|98765|)$/, class: 'sequence-5', multiplier: 9 },
+        { length: 4, regex: /^(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)$/, class: 'sequence-4', multiplier: 7 },
+        { length: 3, regex: /^(?:012|123|234|345|456|567|678|789|abc|bcd|cde|def)$/, class: 'sequence-3', multiplier: 5 },
+      ];
+
+      for (let i = 0; i < hash.length; i++) {
+        const char = hash[i];
+        let highlight = '';
+
+        for (const { length, regex, class: sequenceClass, multiplier: sequenceMultiplier } of sequences) {
+          if (i < hash.length - length + 1) {
+            const subsequence = hash.slice(i, i + length);
+            if (regex.test(subsequence)) {
+              highlight = sequenceClass;
+              highlightedHash += `<span class="${highlight}">${subsequence}</span>`;
+              i += length - 1;
+              multiplier *= sequenceMultiplier;
+              break;
+            }
+          }
+        }
+
+        if (highlight) {
+          continue;
+        }
+
+        if (i < hash.length - 1) {
+          let repeatCount = 1;
+          while (i < hash.length - 1 && char === hash[i + 1]) {
+            repeatCount++;
+            i++;
+          }
+          if (repeatCount >= 2) {
+            highlight = `repeated-${Math.min(repeatCount, 10)}`;
+            highlightedHash += `<span class="${highlight}">${char.repeat(repeatCount)}</span>`;
+            multiplier *= Math.min(repeatCount, 10);
+            continue;
+          }
+        }
+
+        if (char >= 'a' && char <= 'f') {
+          totalScore += char.charCodeAt(0) - 'a'.charCodeAt(0) + 11;
+        } else {
+          totalScore += parseInt(char, 16);
+        }
+        highlightedHash += char;
+      }
+
+      const finalScore = totalScore * multiplier;
+      hashOutput.innerHTML = highlightedHash;
+      score.innerHTML = `Base Score: ${totalScore}<br/>* Multiplier: ${multiplier}<br/>= Total Score: <b>${finalScore.toLocaleString()  }</b>`;
+    }
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);                    
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+  </script>
+</body>
+</html>
