@@ -63,8 +63,6 @@
 <body>
   <h1>SHA Poker Tweet</h1>
   <p>Write a sentence up to 144 characters, this will convert it to SHA-256 and judge it using arbitrary gamification.</p>
-  <p>Base score sums all characters in the hash. Repeated characters and sequences increase multiplier.</p>
-
   <textarea onkeyup="generateHash()" id="inputText" rows="5" cols="50" maxlength="144"></textarea>
   <br>
   <br><br>
@@ -72,8 +70,13 @@
   <div id="hashOutput">---</div>
   <br>
   <h2>Hash Score:</h2>
+  <p><i>Base score sums all characters in the hash. Repeated characters and sequences increase multiplier.</i></p>
   <div id="score">---</div>
   <h2>Mint</h2>
+  <ul>
+    <li>The same text/hash can only be minted once.</li>
+    <li>Trailing spaces before and after the text will be removed.</li>
+  </ul>
   <button>Mint in BASE for 0.00001 ETH</button>
   <script>
     async function generateHash() {
@@ -86,14 +89,14 @@
       let multiplier = 1;
 
       const sequences = [
-        { length: 10, regex: /^(?:0123456789)$/, class: 'sequence-10', multiplier: 50 },
-        { length: 9, regex: /^(?:012345678|123456789)$/, class: 'sequence-9', multiplier: 30 },
-        { length: 8, regex: /^(?:01234567|12345678|23456789)$/, class: 'sequence-8', multiplier: 20 },
-        { length: 7, regex: /^(?:0123456|1234567|2345678|3456789)$/, class: 'sequence-7', multiplier: 15 },
-        { length: 6, regex: /^(?:012345|123456|234567|345678|456789|abcdef)$/, class: 'sequence-6', multiplier: 11 },
-        { length: 5, regex: /^(?:01234|12345|23456|34567|45678|56789|abcde|bcdef|43210|54321|65432|76543|87654|98765|)$/, class: 'sequence-5', multiplier: 9 },
-        { length: 4, regex: /^(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)$/, class: 'sequence-4', multiplier: 7 },
-        { length: 3, regex: /^(?:012|123|234|345|456|567|678|789|abc|bcd|cde|def)$/, class: 'sequence-3', multiplier: 5 },
+        { length: 10, regex: /^(?:0123456789)$/, class: 'sequence-10', multiplier: 1024 },
+        { length: 9, regex: /^(?:012345678|123456789)$/, class: 'sequence-9', multiplier: 512 },
+        { length: 8, regex: /^(?:01234567|12345678|23456789)$/, class: 'sequence-8', multiplier: 256 },
+        { length: 7, regex: /^(?:0123456|1234567|2345678|3456789)$/, class: 'sequence-7', multiplier: 128 },
+        { length: 6, regex: /^(?:012345|123456|234567|345678|456789|abcdef)$/, class: 'sequence-6', multiplier: 64 },
+        { length: 5, regex: /^(?:01234|12345|23456|34567|45678|56789|abcde|bcdef|43210|54321|65432|76543|87654|98765|)$/, class: 'sequence-5', multiplier: 32 },
+        { length: 4, regex: /^(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)$/, class: 'sequence-4', multiplier: 16 },
+        { length: 3, regex: /^(?:012|123|234|345|456|567|678|789|abc|bcd|cde|def)$/, class: 'sequence-3', multiplier: 8 },
       ];
 
       for (let i = 0; i < hash.length; i++) {
@@ -123,10 +126,10 @@
             repeatCount++;
             i++;
           }
-          if (repeatCount >= 2) {
+          if (repeatCount >= 3) {
             highlight = `repeated-${Math.min(repeatCount, 10)}`;
             highlightedHash += `<span class="${highlight}">${char.repeat(repeatCount)}</span>`;
-            multiplier *= Math.min(repeatCount, 10);
+            multiplier *= repeatCount*repeatCount
             continue;
           }
         }
